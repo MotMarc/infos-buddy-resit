@@ -62,15 +62,7 @@ UART::UART() : _attached_terminal(nullptr)
 	assert(present);
 	// Announce that we're here.
 #define write_string(s) write((s), sizeof (s) - 1)
-	write_string("Hello from the InfOS serial console\nLots and lots of very"
-	"very long text to debug the information on possible error conditions that may"
-	" exist within the UART, based on the data that has been received. Keep in mind"
-	" that this is a \"read only\" register, and any data written to this register"
-	" is likely to be ignored or worse, cause different behavior in the UART."
-	" There are several uses for this information, and some information will"
-	" be given below on how it can be useful for diagnosing problems with your"
-	" serial data connection: "
-	); // I get hex 1bf + ten  bytes of 02 82 after this message, regardless...
+	write_string("Hello from the InfOS serial console\n");
 }
 
 bool UART::init(kernel::DeviceManager& dm)
