@@ -76,12 +76,12 @@ public:
 
 	virtual void insert_range(FrameDescriptor *start, uint64_t count) override
 	{
-		mm_log.messagef(LogLevel::DEBUG, "Inserting available frames from %lx -- %lx", sys.mm().pgalloc().pfdescr_to_pfn(start), sys.mm().pgalloc().pfdescr_to_pfn(start + count));
+		mm_log.messagef(LogLevel::DEBUG, "Inserting available frames from %llx -- %llx", sys.mm().pgalloc().pfdescr_to_pfn(start), sys.mm().pgalloc().pfdescr_to_pfn(start + count));
 	}
 
 	virtual void remove_range(FrameDescriptor *start, uint64_t count) override
 	{
-		mm_log.messagef(LogLevel::DEBUG, "Removing available frames from %lx -- %lx", sys.mm().pgalloc().pfdescr_to_pfn(start), sys.mm().pgalloc().pfdescr_to_pfn(start + count));
+		mm_log.messagef(LogLevel::DEBUG, "Removing available frames from %llx -- %llx", sys.mm().pgalloc().pfdescr_to_pfn(start), sys.mm().pgalloc().pfdescr_to_pfn(start + count));
 	}
 
 	const char *name() const override { return "simple"; }

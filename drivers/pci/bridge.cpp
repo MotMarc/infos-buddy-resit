@@ -33,7 +33,7 @@ bool Bridge::init(kernel::DeviceManager& dm)
 		}
 		
 		unsigned int secondary_bus_id = PCI_CONFIG_SECONDARY_BUS(read_config(PCI_REG_BUSINFO));
-		pci_log.messagef(LogLevel::DEBUG, "PCI-to-PCI Bridge secondary=%d", subclass(), secondary_bus_id);
+		pci_log.messagef(LogLevel::DEBUG, "PCI-to-PCI Bridge secondary=%d", /* subclass(), */ secondary_bus_id);
 		
 		_secondary = new PCIBus(secondary_bus_id);
 		return _secondary->probe(dm);

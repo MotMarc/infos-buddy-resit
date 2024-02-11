@@ -75,7 +75,7 @@ bool X86Arch::init()
 	uint64_t rsp;
 	asm volatile("mov %%rsp, %0" : "=r"(rsp));
 
-	x86_log.messagef(LogLevel::DEBUG, "GDTR = %p, IDTR = %p, TR = %p, RSP = %p", gdt.get_ptr(), idt.get_ptr(), tss.get_sel(), rsp);
+	x86_log.messagef(LogLevel::DEBUG, "GDTR = 0x%lx, IDTR = 0x%lx, TR = 0x%llx, RSP = 0x%llx", gdt.get_ptr(), idt.get_ptr(), (uint64_t) tss.get_sel(), rsp);
 
 	__wrmsr(MSR_STAR, 0x18000800000000ULL);				// CS Bases for User-Mode/Kernel-Mode
 	__wrmsr(MSR_LSTAR, (uint64_t)__syscall_trap);		// RIP for syscall entry
@@ -127,38 +127,38 @@ void X86Arch::dump_one_user_frame(uint64_t rip, uint64_t rsp, const char *name) 
 
 void X86Arch::dump_native_context(const X86Context& native_context) const
 {
-	syslog.messagef(LogLevel::DEBUG, "rax=%016lx, rbx=%016lx, rcx=%016lx, rdx=%016lx",
+	syslog.messagef(LogLevel::DEBUG, "rax=%016llx, rbx=%016llx, rcx=%016llx, rdx=%016llx",
 			native_context.rax,
 			native_context.rbx,
 			native_context.rcx,
 			native_context.rdx);
 
-	syslog.messagef(LogLevel::DEBUG, "rsi=%016lx, rdi=%016lx, rsp=%016lx, rbp=%016lx",
+	syslog.messagef(LogLevel::DEBUG, "rsi=%016llx, rdi=%016llx, rsp=%016llx, rbp=%016llx",
 			native_context.rsi,
 			native_context.rdi,
 			native_context.rsp,
 			native_context.rbp);
 
-	syslog.messagef(LogLevel::DEBUG, " r8=%016lx,  r9=%016lx, r10=%016lx, r11=%016lx",
+	syslog.messagef(LogLevel::DEBUG, " r8=%016llx,  r9=%016llx, r10=%016llx, r11=%016llx",
 			native_context.r8,
 			native_context.r9,
 			native_context.r10,
 			native_context.r11);
 
-	syslog.messagef(LogLevel::DEBUG, "r12=%016lx, r13=%016lx, r14=%016lx, r15=%016lx",
+	syslog.messagef(LogLevel::DEBUG, "r12=%016llx, r13=%016llx, r14=%016llx, r15=%016llx",
 			native_context.r12,
 			native_context.r13,
 			native_context.r14,
 			native_context.r15);
 
-	syslog.messagef(LogLevel::DEBUG, "rip=%016lx, cs=%04lx, ss=%04lx, rflags=%016lx, extra=%lx",
+	syslog.messagef(LogLevel::DEBUG, "rip=%016llx, cs=%04llx, ss=%04llx, rflags=%016llx, extra=%llx",
 			native_context.rip,
 			native_context.cs,
 			native_context.ss,
 			native_context.rflags,
 			native_context.extra);
 
-	syslog.messagef(LogLevel::DEBUG, "prev=%p", native_context.previous_context);
+	syslog.messagef(LogLevel::DEBUG, "prev=0x%llx", native_context.previous_context);
 }
 
 void X86Arch::invoke_kernel_syscall(int nr)
@@ -207,7 +207,7 @@ void X86Arch::calibrate_busywait_loop(kernel::DeviceManager& dm)
 	lapic_timer->stop();
 	uint64_t cmploops_per_us = n / 1000;
 	busywait_cmploops_per_us = cmploops_per_us;
-	syslog.messagef(LogLevel::DEBUG, "busywait calibration loop count reached %ld", busywait_cmploops_per_us);
+	syslog.messagef(LogLevel::DEBUG, "busywait calibration loop count reached %lld", busywait_cmploops_per_us);
 }
 void X86Arch::set_periodic_timer_interrupt(kernel::DeviceManager& dm)
 {
@@ -229,12 +229,12 @@ extern "C" {
 	void __debug_save_context()
 	{
 		assert(current_thread);
-		syslog.messagef(LogLevel::DEBUG, "Save Context %p %p", current_thread, current_thread->context());
+		syslog.messagef(LogLevel::DEBUG, "Save Context %p"/*" 0x%lx"*/, current_thread /*, current_thread->context()*/);
 	}
 
 	void __debug_restore_context()
 	{
 		assert(current_thread);
-		syslog.messagef(LogLevel::DEBUG, "Restore Context %p %p", current_thread, current_thread->context());
+		syslog.messagef(LogLevel::DEBUG, "Restore Context %p" /*" 0x%lx"*/, current_thread /*, current_thread->context()*/);
 	}
 }

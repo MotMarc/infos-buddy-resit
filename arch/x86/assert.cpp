@@ -52,7 +52,7 @@ void __assertion_failure(const char *filename, int lineno, const char *expressio
 	unsigned int frame_idx = 0, count = 0;
 	while (rbp && count++ < 100) {
 		uint64_t *stack = (uint64_t *)rbp;
-		infos::kernel::syslog.messagef(infos::kernel::LogLevel::DEBUG, "  %u: %lx", frame_idx++, stack[1]);
+		infos::kernel::syslog.messagef(infos::kernel::LogLevel::DEBUG, "  %u: %llx", frame_idx++, stack[1]);
 		rbp = stack[0];
 	}
 	

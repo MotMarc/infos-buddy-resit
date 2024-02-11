@@ -44,7 +44,7 @@ unsigned long SyscallManager::InvokeSyscall(int nr, unsigned long arg0, unsigned
 	syscallfn fn = syscall_table_[nr];
 
 	if (fn == nullptr) {
-		syslog.messagef(LogLevel::DEBUG, "UNHANDLED USER SYSTEM CALL: %lu", nr);
+		syslog.messagef(LogLevel::DEBUG, "UNHANDLED USER SYSTEM CALL: %d", nr);
 		return -1;
 	} else {
 		return fn(arg0, arg1, arg2, arg3, arg4, arg5);

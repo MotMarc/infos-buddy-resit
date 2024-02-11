@@ -47,14 +47,14 @@ void kernel_syscall_handler(const IRQ *irq, void *priv)
 {
 //	syslog.messagef(LogLevel::DEBUG, "KERNEL SYSTEM CALL: rcx=%lx", current_context.rax);
 
-	int syscall = Thread::current().context().native_context->rax;
+	uint64_t syscall = Thread::current().context().native_context->rax;
 	switch (syscall) {
 	case 1:
 		sys.scheduler().schedule();
 		break;
 
 	default:
-		syslog.messagef(LogLevel::DEBUG, "UNHANDLED SYSTEM CALL %lu", syscall);
+		syslog.messagef(LogLevel::DEBUG, "UNHANDLED SYSTEM CALL %llu", syscall);
 		break;
 	}
 }

@@ -104,7 +104,7 @@ bool infos::arch::x86::timer_init()
 
 	// Print out some information about the memory-mapped location of these
 	// structures.
-	syslog.messagef(LogLevel::DEBUG, "LAPIC base=%lx, IOAPIC base=%lx", lapic_base, ioapic_base);
+	syslog.messagef(LogLevel::DEBUG, "LAPIC base=%llx, IOAPIC base=%x", lapic_base, ioapic_base);
 
 	// Create and register an LAPIC object.
 	LAPIC *lapic = new LAPIC(pa_to_vpa(lapic_base));

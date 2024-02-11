@@ -80,7 +80,7 @@ bool MemoryManager::test_page_allocator_order(int order)
 	
 	mm_log.message(LogLevel::DEBUG, "---");
 	for (int i = 0; i < (1<<order); i++) {
-		mm_log.messagef(LogLevel::DEBUG, "[%d] pfn=%lx addr=%p", 
+		mm_log.messagef(LogLevel::DEBUG, "[%d] pfn=%llx addr=0x%lx", 
 				i,
 				_page_alloc.pfdescr_to_pfn(&frames8[i]),
 				_page_alloc.pfdescr_to_vpa(&frames8[i]));
@@ -120,11 +120,11 @@ bool MemoryManager::test_page_allocator()
 bool MemoryManager::initialise_allocators()
 {
 	// Print out some allocation statistics
-	mm_log.messagef(LogLevel::INFO, "Total physical memory: %lx (%d MB)",
+	mm_log.messagef(LogLevel::INFO, "Total physical memory: %llx (%lld MB)",
 			((_last_pfn + 1) * _page_size),
 			((_last_pfn + 1) * _page_size) / 1048576);
 	
-	mm_log.messagef(LogLevel::INFO, "Last PFN: %lx (%lx)", _last_pfn, _last_pfn * _page_size);
+	mm_log.messagef(LogLevel::INFO, "Last PFN: %llx (%llx)", _last_pfn, _last_pfn * _page_size);
 	
 	// Set-up the page allocation algorithm
 	PageAllocatorAlgorithm *algo = acquire_page_allocator_algorithm();

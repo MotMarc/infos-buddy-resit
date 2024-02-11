@@ -107,7 +107,7 @@ bool LAPICTimer::calibrate()
 	_frequency = (ticks_per_period * (FACTOR/CALIBRATION_PERIOD));
 #endif
 
-	lapic_timer_log.messagef(LogLevel::DEBUG, "frequency=%lu", _frequency);
+	lapic_timer_log.messagef(LogLevel::DEBUG, "frequency=%llu", _frequency);
 	return true;
 }
 

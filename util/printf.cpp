@@ -236,9 +236,9 @@ retry_format:
 				count++;
 				break;
 			}
-
+			/* When we reach here, we've seen the last format character. */
 			fmt++;
-		} else {
+		} else /* it means the char we saw is not '%' */ {
 			*buffer = *fmt;
 
 			buffer++;

@@ -268,7 +268,7 @@ Process *Kernel::launch_process(const String& path, const String& cmdline)
 			return NULL;
 		}
 
-		syslog.messagef(LogLevel::DEBUG, "Starting process... %p", np->main_thread().context().native_context->rdi);
+		syslog.messagef(LogLevel::DEBUG, "Starting process... 0x%llx", np->main_thread().context().native_context->rdi);
 		np->start();
 		delete loader;
 		// successful use of loader transfers ownership of the file to the process

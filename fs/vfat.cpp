@@ -25,7 +25,7 @@ VFAT::VFAT(drivers::block::BlockDevice& bdev) : BlockBasedFilesystem(bdev)
 
 PFSNode *VFAT::mount()
 {
-	fs_log.messagef(LogLevel::DEBUG, "vfat: block-size=%u, count=%u", block_device().block_size(), block_device().block_size());
+	fs_log.messagef(LogLevel::DEBUG, "vfat: block-size=%lu, count=%lu", block_device().block_size(), block_device().block_size());
 
 	if (block_device().block_size() != sizeof(vfat_boot_block)) {
 		return NULL;

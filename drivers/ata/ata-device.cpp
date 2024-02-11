@@ -113,7 +113,10 @@ bool ATADevice::create_partitions(const uint8_t* partition_table)
 			continue;
 		}
 		
-		ata_log.messagef(LogLevel::INFO, "partition %u active @ off=%x, sz=%x", partition_table_index, pte->first_absolute_sector, pte->nr_sectors);
+		uint32_t first_sector = 0;
+		// little-endian copy
+		memcpy(&first_sector, pte->first_absolute_sector, sizeof pte->first_absolute_sector);
+		ata_log.messagef(LogLevel::INFO, "partition %u active @ off=%x, sz=%x", partition_table_index, (unsigned) first_sector, pte->nr_sectors);
 		
 		auto partition_device = new infos::drivers::block::BlockDevicePartition(*this, pte->first_absolute_sector_lba, pte->nr_sectors);
 		_partitions.append(partition_device);

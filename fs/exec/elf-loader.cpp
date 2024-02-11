@@ -64,7 +64,7 @@ Process *ElfLoader::load(const String &cmdline)
 
 	if (hdr.type != ELFType::ET_EXEC)
 	{
-		elf_log.messagef(LogLevel::DEBUG, "Only executables can be loaded (%d)", hdr.type);
+		elf_log.messagef(LogLevel::DEBUG, "Only executables can be loaded (%d)", (int) hdr.type);
 		return NULL;
 	}
 

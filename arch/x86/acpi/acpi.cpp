@@ -118,7 +118,7 @@ static RSDPDescriptor *locate_rsdp()
 	acpi_log.messagef(infos::kernel::LogLevel::DEBUG, "finding ebda...");
 	
 	virt_addr_t ebda = pa_to_kva(*(uint16_t *)(pa_to_kva(0x40E)) << 4);
-	acpi_log.messagef(infos::kernel::LogLevel::DEBUG, "ebda=%p, locating rsdp descriptor...", ebda);
+	acpi_log.messagef(infos::kernel::LogLevel::DEBUG, "ebda=0x%lx, locating rsdp descriptor...", ebda);
 	
 	RSDPDescriptor *ret = scan_for_rsdp((uintptr_t)ebda, (uintptr_t)ebda + 0x400);
 	
@@ -160,7 +160,7 @@ static bool parse_madt_ioapic(const MADTRecordIOAPIC *ioapic)
 {
 	assert(!__ioapic_base);
 	acpi_log.messagef(infos::kernel::LogLevel::DEBUG,
-		"madt: ioapic: id=%u, addr=%p, gsi-base=%u",
+		"madt: ioapic: id=%u, addr=0x%x, gsi-base=%u",
 		ioapic->ioapic_id,
 		ioapic->ioapic_address,
 		ioapic->gsi_base);
@@ -282,7 +282,7 @@ bool infos::arch::x86::acpi::acpi_init()
 	char oemid[7] = {0};
 	strncpy(oemid, __rsdp->oem_id, 6);
 	
-	acpi_log.messagef(infos::kernel::LogLevel::INFO, "acpi version=%u oemid=%s rsdt=%p", __rsdp->revision, oemid, __rsdp->rsdt_address);
+	acpi_log.messagef(infos::kernel::LogLevel::INFO, "acpi version=%u oemid=%s rsdt=0x%llx", __rsdp->revision, oemid, (uint64_t) __rsdp->rsdt_address);
 	
 	if (__rsdp->revision > 2) {
 		acpi_log.messagef(infos::kernel::LogLevel::ERROR, "unsupported acpi revision");

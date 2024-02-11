@@ -41,7 +41,7 @@ namespace infos
 			Log() : _enabled(true) { }
 			
 			virtual void message(LogLevel::LogLevel level, const char *message) = 0;
-			void messagef(LogLevel::LogLevel level, const char *format, ...);
+			void messagef(LogLevel::LogLevel level, const char *format, ...) __attribute__((format(printf, 3, 4)));
 			
 			void enable() { _enabled = true; }
 			void disable() { _enabled = false; }

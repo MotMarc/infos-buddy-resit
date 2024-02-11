@@ -64,7 +64,7 @@ bool PageAllocator::setup_pf_descriptors()
 
 	// Use the start of the heap area to store the descriptor array.
 	_pf_descriptors = (FrameDescriptor *)&_HEAP_START;
-	mm_log.messagef(LogLevel::DEBUG, "Allocating %lu frame descriptors (%lu kB)", _nr_frames, KB(pd_size));
+	mm_log.messagef(LogLevel::DEBUG, "Allocating %llu frame descriptors (%llu kB)", _nr_frames, KB(pd_size));
 
 	// Make sure the descriptors will fit in this region of memory
 	const PhysicalMemoryBlock *pmb = owner().lookup_phys_block(
@@ -100,7 +100,7 @@ bool PageAllocator::init()
 
 	// Initialise the page allocator algorithm
 	mm_log.messagef(LogLevel::INFO, "Initialising allocator algorithm '%s'", _allocator_algorithm->name());
-    mm_log.messagef(LogLevel::INFO, "Page Allocator: total=%lu", _nr_frames);
+    mm_log.messagef(LogLevel::INFO, "Page Allocator: total=%llu", _nr_frames);
     if (!_allocator_algorithm->init(_pf_descriptors, _nr_frames))
 	{
 		mm_log.message(LogLevel::ERROR, "Allocator failed to initialise");
@@ -158,7 +158,7 @@ bool PageAllocator::init()
 	pfn_t image_start_pfn = pa_to_pfn((phys_addr_t)&_IMAGE_START); // _IMAGE_START is a PA
 	nr_free_frames -= reserve_range(image_start_pfn, ((_nr_frames * sizeof(FrameDescriptor)) >> 12) + 1);
 
-	mm_log.messagef(LogLevel::INFO, "Page Allocator: total=%lu, present=%lu, free=%lu (%u MB)", _nr_frames, nr_present_frames, nr_free_frames, MB(nr_free_frames << 12));
+	mm_log.messagef(LogLevel::INFO, "Page Allocator: total=%llu, present=%llu, free=%llu (%llu MB)", _nr_frames, nr_present_frames, nr_free_frames, MB(nr_free_frames << 12));
 
 	// Now, initialise the page allocation algorithm.
 
@@ -268,7 +268,7 @@ bool PageAllocator::self_test()
 		return false;
 	}
 
-	mm_log.messagef(LogLevel::INFO, "ALLOCATED PFN: %p", pfdescr_to_pfn(p));
+	mm_log.messagef(LogLevel::INFO, "ALLOCATED PFN: 0x%llx", pfdescr_to_pfn(p));
 	_allocator_algorithm->dump_state();
 
 	mm_log.messagef(LogLevel::INFO, "------------------------");
@@ -280,7 +280,7 @@ bool PageAllocator::self_test()
 	mm_log.messagef(LogLevel::INFO, "------------------------");
 	mm_log.messagef(LogLevel::INFO, "(3) ALLOCATING TWO CONTIGUOUS PAGES");
 	p = _allocator_algorithm->allocate(1);
-	mm_log.messagef(LogLevel::INFO, "ALLOCATED PFN: %p", pfdescr_to_pfn(p));
+	mm_log.messagef(LogLevel::INFO, "ALLOCATED PFN: 0x%llx", pfdescr_to_pfn(p));
 
 	_allocator_algorithm->dump_state();
 
@@ -312,35 +312,35 @@ bool PageAllocator::self_test()
 	mm_log.messagef(LogLevel::INFO, "* AFTER ALLOCATION");
 	_allocator_algorithm->dump_state();
 
-	mm_log.messagef(LogLevel::INFO, "  FREE %p", pfdescr_to_pfn(p05));
+	mm_log.messagef(LogLevel::INFO, "  FREE 0x%llx", pfdescr_to_pfn(p05));
 	_allocator_algorithm->free(p05, 0);
 	_allocator_algorithm->dump_state();
 
-	mm_log.messagef(LogLevel::INFO, "  FREE %p", pfdescr_to_pfn(p03));
+	mm_log.messagef(LogLevel::INFO, "  FREE 0x%llx", pfdescr_to_pfn(p03));
 	_allocator_algorithm->free(p03, 2);
 	_allocator_algorithm->dump_state();
 
-	mm_log.messagef(LogLevel::INFO, "  FREE %p", pfdescr_to_pfn(p06));
+	mm_log.messagef(LogLevel::INFO, "  FREE 0x%llx", pfdescr_to_pfn(p06));
 	_allocator_algorithm->free(p06, 0);
 	_allocator_algorithm->dump_state();
 
-	mm_log.messagef(LogLevel::INFO, "  FREE %p", pfdescr_to_pfn(p07));
+	mm_log.messagef(LogLevel::INFO, "  FREE 0x%llx", pfdescr_to_pfn(p07));
 	_allocator_algorithm->free(p07, 0);
 	_allocator_algorithm->dump_state();
 
-	mm_log.messagef(LogLevel::INFO, "  FREE %p", pfdescr_to_pfn(p02));
+	mm_log.messagef(LogLevel::INFO, "  FREE 0x%llx", pfdescr_to_pfn(p02));
 	_allocator_algorithm->free(p02, 0);
 	_allocator_algorithm->dump_state();
 
-	mm_log.messagef(LogLevel::INFO, "  FREE %p", pfdescr_to_pfn(p01));
+	mm_log.messagef(LogLevel::INFO, "  FREE 0x%llx", pfdescr_to_pfn(p01));
 	_allocator_algorithm->free(p01, 0);
 	_allocator_algorithm->dump_state();
 
-	mm_log.messagef(LogLevel::INFO, "  FREE %p", pfdescr_to_pfn(p00));
+	mm_log.messagef(LogLevel::INFO, "  FREE 0x%llx", pfdescr_to_pfn(p00));
 	_allocator_algorithm->free(p00, 0);
 	_allocator_algorithm->dump_state();
 
-	mm_log.messagef(LogLevel::INFO, "  FREE %p", pfdescr_to_pfn(p04));
+	mm_log.messagef(LogLevel::INFO, "  FREE 0x%llx", pfdescr_to_pfn(p04));
 	_allocator_algorithm->free(p04, 0);
 
 	mm_log.messagef(LogLevel::INFO, "* AFTER RANDOM ORDER FREEING");

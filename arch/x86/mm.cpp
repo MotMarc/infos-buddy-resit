@@ -47,12 +47,12 @@ static void handle_page_fault(const IRQ *irq, void *priv)
 	if (current_thread == NULL) {
 		// If there is no current_thread, then this page fault happened REALLY
 		// early.  We must abort.
-		syslog.messagef(LogLevel::FATAL, "*** PAGE FAULT @ vaddr=%p", fault_address);
+		syslog.messagef(LogLevel::FATAL, "*** PAGE FAULT @ vaddr=0x%llx", fault_address);
 
 		arch_abort();
 	}
 
-	syslog.messagef(LogLevel::WARNING, "*** PAGE FAULT @ vaddr=%p rip=%p proc=%s", fault_address, current_thread->context().native_context->rip, current_thread->owner().name().c_str());
+	syslog.messagef(LogLevel::WARNING, "*** PAGE FAULT @ vaddr=0x%llx rip=0x%llx proc=%s", fault_address, current_thread->context().native_context->rip, current_thread->owner().name().c_str());
 	/* Is there a non-zero cookie in that PTE? */
 	VMA& vma = current_thread->owner().vma();
 	uint32_t cookie;
@@ -393,7 +393,7 @@ void infos::mm::VMA::insert_mapping(virt_addr_t va, phys_addr_t pa, MappingFlags
 	if (flags & MappingFlags::Writable) pte->writable(true);
 	if (flags & MappingFlags::User) pte->user(true);
 	
-	mm_log.messagef(LogLevel::DEBUG, "vma: mapping va=%p -> pa=%p", va, pa);
+	mm_log.messagef(LogLevel::DEBUG, "vma: mapping va=0x%lx -> pa=0x%lx", va, pa);
 }
 bool infos::mm::VMA::set_pte_cookie(virt_addr_t va, uint32_t cookie)
 {
@@ -542,7 +542,7 @@ void infos::mm::VMA::dump()
 		if (!te[i].present()) continue;
 		if (te[i].huge()) {
 			uintptr_t va = (uint64_t)i << 36;
-			mm_log.messagef(LogLevel::DEBUG, "VMA: MAP VA=%p -> PA=%p", va, te[i].base_address());
+			mm_log.messagef(LogLevel::DEBUG, "VMA: MAP VA=0x%lx -> PA=0x%lx", va, te[i].base_address());
 		} else {
 			dump_pdp(i, pa_to_vpa(te[i].base_address()));
 		}
@@ -556,7 +556,7 @@ void infos::mm::VMA::dump_pdp(int pml4, virt_addr_t pdp_va)
 		if (!te[i].present()) continue;
 		if (te[i].huge()) {
 			uintptr_t va = (uint64_t)pml4 << 36 | (uint64_t)i << 28;
-			mm_log.messagef(LogLevel::DEBUG, "VMA: MAP VA=%p -> PA=%p", va, te[i].base_address());	
+			mm_log.messagef(LogLevel::DEBUG, "VMA: MAP VA=0x%lx -> PA=0x%lx", va, te[i].base_address());	
 		} else {
 			dump_pd(pml4, i, pa_to_vpa(te[i].base_address()));
 		}
@@ -570,7 +570,7 @@ void infos::mm::VMA::dump_pd(int pml4, int pdp, virt_addr_t pd_va)
 		if (!te[i].present()) continue;
 		if (te[i].huge()) {
 			uintptr_t va = (uint64_t)pml4 << 36 | (uint64_t)pdp << 28 | (uint64_t)i << 20;
-			mm_log.messagef(LogLevel::DEBUG, "VMA: MAP VA=%p -> PA=%p", va, te[i].base_address());
+			mm_log.messagef(LogLevel::DEBUG, "VMA: MAP VA=0x%lx -> PA=0x%lx", va, te[i].base_address());
 		} else {
 			dump_pt(pml4, pdp, i, pa_to_vpa(te[i].base_address()));
 		}
@@ -584,6 +584,6 @@ void VMA::dump_pt(int pml4, int pdp, int pd, virt_addr_t pt_va)
 		if (!te[i].present()) continue;
 		
 		uintptr_t va = (uint64_t)pml4 << 36 | (uint64_t)pdp << 28 | (uint64_t)pd << 20 | (uint64_t)i << 12;
-		mm_log.messagef(LogLevel::DEBUG, "VMA: MAP VA=%p -> PA=%p", va, te[i].base_address());
+		mm_log.messagef(LogLevel::DEBUG, "VMA: MAP VA=0x%lx -> PA=0x%lx", va, te[i].base_address());
 	}
 }

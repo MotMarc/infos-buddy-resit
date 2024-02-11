@@ -25,7 +25,7 @@ bool infos::arch::x86::modules_init()
 		uintptr_t module_end_va = pa_to_vpa(module_entry->mod_end);
 		size_t module_size = module_end_va - module_start_va;
 		
-		x86_log.messagef(LogLevel::INFO, "Loading module: %s @ %p", module_entry->cmdline, module_start_va);
+		x86_log.messagef(LogLevel::INFO, "Loading module: %s @ 0x%lx", (char*)(uintptr_t)module_entry->cmdline, module_start_va);
 		if (!sys.module_manager().LoadModule((void *)module_start_va, module_size)) {
 			x86_log.message(LogLevel::ERROR, "Error loading module");
 			return false;
