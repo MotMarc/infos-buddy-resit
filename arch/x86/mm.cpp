@@ -362,8 +362,12 @@ bool infos::mm::VMA::allocate_virt(virt_addr_t va, int nr_pages, int perm /* = -
 	
 	virt_addr_t vbase = va;
 	phys_addr_t pbase = sys.mm().pgalloc().pfdescr_to_pa(pfdescr);
+	mm::MappingFlags::MappingFlags always_mapping_flags = MappingFlags::Present | MappingFlags::User;
+	mm::MappingFlags::MappingFlags default_mapping_flags = always_mapping_flags | MappingFlags::Writable;
 	for (unsigned int i = 0; i < (1u << order); i++) {
-		insert_mapping(vbase, pbase, MappingFlags::Present | MappingFlags::User | MappingFlags::Writable);
+		insert_mapping(vbase, pbase,
+			(perm == -1) ? default_mapping_flags : (always_mapping_flags | mm::MappingFlags::MappingFlags(perm))
+		);
 		
 		vbase += 0x1000;
 		pbase += 0x1000;
