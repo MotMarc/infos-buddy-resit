@@ -11,22 +11,6 @@ namespace infos
 	{
 		class FrameDescriptor; // in page-allocator.h
 		
-		namespace MappingFlags
-		{
-			enum MappingFlags
-			{
-				None		= 0,
-				Present		= 1,
-				User		= 2,
-				Writable	= 4
-			};
-			
-			static inline MappingFlags operator|(const MappingFlags& l, const MappingFlags& r)
-			{
-				return (MappingFlags)((uint64_t)l | (uint64_t)r);
-			}
-		}
-		
 		/* In InfOS, a virtual address space is called a 'virtual memory area' or VMA.
 		 * Each process has its own VMA, and the implementation of a VMA involves
 		 * maintaining a multi-level page table. As this is 64-bit x86, the page table
@@ -62,7 +46,7 @@ namespace infos
 			 * with permissions. NOTE: this is unimplemented in vma.cpp. */
 			bool allocate_virt_any(int nr_pages, int perm = -1);
 			/* Install a mapping from a (virtual) page to a (physical) frame, with permissions. */
-			void insert_mapping(virt_addr_t va, phys_addr_t pa, MappingFlags::MappingFlags flags);
+			void insert_mapping(virt_addr_t va, phys_addr_t pa, unsigned long flags);
 			/* Does this virtual address map to anything? Update pa to the physical address. */
 			bool get_mapping(virt_addr_t va, phys_addr_t& pa);
 			/* Does this virtual address map to anything? */

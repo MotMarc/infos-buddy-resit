@@ -344,7 +344,7 @@ void VMA::install_default_kernel_mapping()
 	pml4[0x100] = __template_pml4[0x100];
 }
 
-void infos::mm::VMA::insert_mapping(virt_addr_t va, phys_addr_t pa, MappingFlags::MappingFlags flags)
+void infos::mm::VMA::insert_mapping(virt_addr_t va, phys_addr_t pa, unsigned long flags)
 {
 	table_idx_t pml4_idx, pdp_idx, pd_idx, pt_idx;
 	va_table_indices(va, pml4_idx, pdp_idx, pd_idx, pt_idx);
@@ -389,9 +389,9 @@ void infos::mm::VMA::insert_mapping(virt_addr_t va, phys_addr_t pa, MappingFlags
 	
 	pte->base_address(pa); // this is the only place we use 'pa'
 	
-	if (flags & MappingFlags::Present) pte->present(true);
-	if (flags & MappingFlags::Writable) pte->writable(true);
-	if (flags & MappingFlags::User) pte->user(true);
+	if (flags & PTE_PRESENT) pte->present(true);
+	if (flags & PTE_WRITABLE) pte->writable(true);
+	if (flags & PTE_ALLOW_USER) pte->user(true);
 	
 	mm_log.messagef(LogLevel::DEBUG, "vma: mapping va=0x%lx -> pa=0x%lx", va, pa);
 }
@@ -436,11 +436,11 @@ bool infos::mm::VMA::allocate_virt(virt_addr_t va, int nr_pages, int perm /* = -
 	
 	virt_addr_t vbase = va;
 	phys_addr_t pbase = sys.mm().pgalloc().pfdescr_to_pa(pfdescr);
-	mm::MappingFlags::MappingFlags always_mapping_flags = MappingFlags::Present | MappingFlags::User;
-	mm::MappingFlags::MappingFlags default_mapping_flags = always_mapping_flags | MappingFlags::Writable;
+	unsigned long always_mapping_flags = PTE_PRESENT | PTE_ALLOW_USER;
+	unsigned long default_mapping_flags = always_mapping_flags | PTE_WRITABLE;
 	for (unsigned int i = 0; i < (1u << order); i++) {
 		insert_mapping(vbase, pbase,
-			(perm == -1) ? default_mapping_flags : (always_mapping_flags | mm::MappingFlags::MappingFlags(perm))
+			(perm == -1) ? default_mapping_flags : (always_mapping_flags | perm)
 		);
 		
 		vbase += 0x1000;
