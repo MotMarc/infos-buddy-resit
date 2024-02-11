@@ -148,7 +148,7 @@ Process *ElfLoader::load(const String &cmdline)
 
 	bool use_interp = false;
 
-	Process *np = new Process("user", false, (Thread::thread_proc_t)hdr.entry_point);
+	Process *np = new Process("user", false, (Thread::thread_proc_t)hdr.entry_point, &_file);
 	using namespace mm::MappingFlags;
 	for (unsigned int i = 0; i < hdr.phnum; i++)
 	{

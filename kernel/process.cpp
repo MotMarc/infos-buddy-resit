@@ -12,14 +12,17 @@
 
 using namespace infos::kernel;
 
-Process::Process(const util::String& name, bool kernel_process, Thread::thread_proc_t entry_point)
-	: _name(name), _kernel_process(kernel_process), _terminated(false), _vma()
+Process::Process(const util::String& name, bool kernel_process,
+	Thread::thread_proc_t entry_point, fs::File *file /* = nullptr */)
+	: _name(name), _kernel_process(kernel_process), _terminated(false), _vma(), _file(file)
 {
 	// Initialise the VMA by installing the default kernel mapping.
 	_vma.install_default_kernel_mapping();
 
 	// Create the main thread.
 	_main_thread = &create_thread(kernel_process ? ThreadPrivilege::Kernel : ThreadPrivilege::User, entry_point, "main");
+
+	// TODO: if not kernel-mode, check we definitely have a file, else panic
 }
 
 Process::~Process()
@@ -29,6 +32,8 @@ Process::~Process()
 		assert(thread->state() == SchedulingEntityState::STOPPED);
 		delete thread;
 	}
+	// We need to delete the handle on our executable file, if we have one
+	if (_file) delete _file;
 }
 
 void Process::start()

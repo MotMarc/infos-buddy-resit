@@ -263,7 +263,7 @@ Process *Kernel::launch_process(const String& path, const String& cmdline)
 		syslog.messagef(LogLevel::DEBUG, "Starting process... %p", np->main_thread().context().native_context->rdi);
 		np->start();
 		delete loader;
-		delete image;
+		// successful use of loader transfers ownership of the file to the process
 
 		return np;
 	} else {
