@@ -12,7 +12,7 @@
 #include <infos/kernel/process.h>
 #include <infos/mm/mm.h>
 #include <infos/mm/page-allocator.h>
-
+#include <arch/x86/vma.h> /* HACK: make sure we have the x86 page table definitions in scope */
 using namespace infos::kernel;
 using namespace infos::fs;
 using namespace infos::fs::exec;
@@ -100,14 +100,49 @@ Process *ElfLoader::load(const String &cmdline)
 		{
 		case ProgramHeaderEntryType::PT_LOAD:
 		{
-			if (!np->vma().is_mapped(ent.vaddr))
+			uintptr_t file_end_vaddr = ent.vaddr + ent.filesz;
+			uintptr_t nextpage = __align_down_page(ent.vaddr + __page_size);
+			// for each page that any part of this segment overlaps...
+			for (uintptr_t vaddr = ent.vaddr; vaddr < ent.vaddr + ent.memsz;
+				vaddr = nextpage, nextpage += __page_size)
 			{
-				np->vma().allocate_virt(ent.vaddr, __align_up_page(ent.memsz) >> 12, -1);
+				size_t sz;
+				unsigned long offset;
+				// we have to allocate a page backed by real memory
+				if (!np->vma().is_mapped(vaddr)) np->vma().allocate_virt(vaddr, 1, -1);
+				if (vaddr % __page_size == 0
+					&& nextpage <= file_end_vaddr)
+				{
+					/* Easy case: here we need a whole page of data from the file */
+					sz = __page_size;
+					offset = ent.offset + (vaddr - ent.vaddr);
+				}
+				if (vaddr == ent.vaddr && nextpage < file_end_vaddr)
+				{
+					offset = ent.offset;
+					// the file data continues, but this time around, we
+					// copy just the part in this page
+					sz = __align_up_page(ent.vaddr) - ent.vaddr;
+				}
+				else if (vaddr >= file_end_vaddr)
+				{
+					// we're after the end of file data... this part needs to be
+					// zero-initialized (allocate_phys does this)
+					continue;
+				}
+				else
+				{
+					// last page with file data, not a whole page
+					assert(vaddr < file_end_vaddr);
+					assert(nextpage > file_end_vaddr);
+					sz = file_end_vaddr - vaddr;
+					offset = ent.offset + (vaddr - ent.vaddr);
+				}
+				char *buffer = new char[sz];
+				_file.pread(buffer, sz, offset);
+				np->vma().copy_to(vaddr, buffer, sz);
+				delete buffer;
 			}
-			char *buffer = new char[ent.filesz];
-			_file.pread(buffer, ent.filesz, ent.offset);
-			np->vma().copy_to(ent.vaddr, buffer, ent.filesz);
-			delete buffer;
 		}
 		break;
 
