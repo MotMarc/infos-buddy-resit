@@ -12,6 +12,7 @@
  */
 
 #pragma once
+#include <infos/mm/vma.h>
 
 namespace infos {
         namespace arch {
@@ -20,7 +21,7 @@ namespace infos {
 extern uint64_t *__template_pml4;
 
 #define BITS(val, start, end) ((((uint64_t)val) >> start) & (((1 << (end - start + 1)) - 1)))
-			
+
 typedef uint16_t table_idx_t;
 
 static inline void va_table_indices(virt_addr_t va, table_idx_t& pm, table_idx_t& pdp, table_idx_t& pd, table_idx_t& pt)
@@ -31,32 +32,27 @@ static inline void va_table_indices(virt_addr_t va, table_idx_t& pm, table_idx_t
 	pt = BITS(va, 12, 20);
 }
 
-/* On 64-bit x86, the lower bits 0..6 inclusive and 8 have the same flag meaning
- * at all levels in the page table. Bit 7 is Page Size (PS) in higher levels, and
- * Page Attribute Table (PAT) at the lowest (PT) level. PAT is bit 12 at higher
- * levels. This picture is useful: https://wiki.osdev.org/File:64-bit_page_tables2.png
- * Leave this at namespace scope, not inside GenericPageTableEntry, so that ORing
- * together doesn't get noisy. It's a pity we can't "using" a class-level definition
- * to pull these into scope. */
-enum PageTableEntryFlags {
-	// PTE
-	PTE_PRESENT		= 1<<0,
-	PTE_WRITABLE	= 1<<1,
-	PTE_ALLOW_USER	= 1<<2,
-	PTE_WRITE_THROUGH	= 1<<3,
-	PTE_CACHE_DISABLED	= 1<<4,
-	PTE_ACCESSED	= 1<<5,
-	PTE_DIRTY		= 1<<6,
-	PTE_HUGE		= 1<<7,
-	PTE_GLOBAL		= 1<<8,
-};
-
-struct GenericPageTableEntry {
+/* A page table entry can have one or more flags set, in addition to its main field
+ * that is the frame number (of the page, or of the lower-level page table).
+ *
+ * Reminder:
+ * to understand page tables on x86-64, this picture is useful:
+ * https://wiki.osdev.org/File:64-bit_page_tables2.png
+ *
+ * The base class mm::GenericPageTableEntry is defined in include/infos/mm/vma.h.
+ * The trick of inheriting from a template that we instantiate *using ourselves*
+ * is called the "Curiously Recurring Template Pattern" or CRTP, and was documented
+ * by Jim Coplien in 1995. It is an example of what programming-language
+ * theoreticians call "F-bound polymorphism". Here it effectively delays the
+ * compilation of the base-class code until after template elaboration, where the
+ * compiler knows what the derived class is (here GenericX86PageTableEntry) so can
+ * check that the static_cast being done the base class methods is sensible. */
+struct GenericX86PageTableEntry : mm::GenericPageTableEntry<GenericX86PageTableEntry> {
 
 	union {
 		uint64_t bits;
 	};
-	
+
 	inline phys_addr_t base_address() const {
 		return bits & ~0xfff;
 	}
@@ -74,39 +70,21 @@ struct GenericPageTableEntry {
 		bits &= ~0xfff;
 		bits |= flags & 0xfff;
 	}
-	
-	inline bool get_flag(PageTableEntryFlags mask) const { return !!(flags() & mask); }
-	inline void set_flag(PageTableEntryFlags mask, bool v) {
-		if (!v) {
-			flags(flags() & ~mask); 
-		} else {
-			flags(flags() | mask);
-		}
-	}
-	
-	inline bool present() const { return get_flag(PageTableEntryFlags::PTE_PRESENT); }
-	inline void present(bool v) { set_flag(PageTableEntryFlags::PTE_PRESENT, v); }
-	
-	inline bool writable() const { return get_flag(PageTableEntryFlags::PTE_WRITABLE); }
-	inline void writable(bool v) { set_flag(PageTableEntryFlags::PTE_WRITABLE, v); }
+} __packed;
+/* check that '__packed' did what it was supposed to, and that
+ * nobody has unwisely added fields to the base class. */
+static_assert(sizeof (GenericX86PageTableEntry) == 8);
 
-	inline bool user() const { return get_flag(PageTableEntryFlags::PTE_ALLOW_USER); }
-	inline void user(bool v) { set_flag(PageTableEntryFlags::PTE_ALLOW_USER, v); }
-
-	inline bool huge() const { return get_flag(PageTableEntryFlags::PTE_HUGE); }
-	inline void huge(bool v) { set_flag(PageTableEntryFlags::PTE_HUGE, v); }
+struct PML4TableEntry : GenericX86PageTableEntry {
 } __packed;
 
-struct PML4TableEntry : GenericPageTableEntry {
+struct PDPTableEntry : GenericX86PageTableEntry {
 } __packed;
 
-struct PDPTableEntry : GenericPageTableEntry {
+struct PDTableEntry : GenericX86PageTableEntry {
 } __packed;
 
-struct PDTableEntry : GenericPageTableEntry {
-} __packed;
-
-struct PTTableEntry : GenericPageTableEntry {
+struct PTTableEntry : GenericX86PageTableEntry {
 } __packed;
 
 } /* end namespace x86 */

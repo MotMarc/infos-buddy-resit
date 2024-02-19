@@ -74,7 +74,7 @@ static void handle_page_fault(const IRQ *irq, void *priv)
 		 * spin waiting for it to come in. So what we are doing will tank system
 		 * responsiveness and waste a lot of CPU cycles. A more realistic version
 		 * would start the I/O here, and set the process state to waiting on that
-		 * I/O... then, late,r when the I/O has completed, the interrupt handler
+		 * I/O... then, later, when the I/O has completed, the interrupt handler
 		 * will make the process runnable again. Instead we are blocking the whole
 		 * CPU while we synchronously do the programmed I/O.
 		 *
@@ -87,8 +87,8 @@ static void handle_page_fault(const IRQ *irq, void *priv)
 		 * a pre-calibrated busy-wait loop.
 		 */
 		uint64_t fault_address_page_base = fault_address & ~(__page_size - 1);
-		/* We must always make it writeable initially! Because we are going to write to it.  */
-		vma.allocate_virt(fault_address_page_base, 1, -1);
+		/* We must always make it writable initially! Because we are going to write to it.  */
+		vma.allocate_virt(fault_address_page_base, 1, /* default flags */ -1);
 		/* The file offset is stored in the cookie. */
 		uint32_t file_offset = cookie & ~(__page_size - 1);
 		syslog.messagef(LogLevel::DEBUG, "we will synchronously read from file offset 0x%x",
@@ -109,9 +109,9 @@ static void handle_page_fault(const IRQ *irq, void *priv)
 		syslog.messagef(LogLevel::DEBUG, "finished synchronous read of one page from file offset 0x%x",
 			(unsigned) file_offset);
 		// FIXME: you should fix up the mapping flags, e.g. to make
-		// the page read-only if it wasn't supposed to be writeable.
+		// the page read-only if it wasn't supposed to be writable.
 		// (Notice that in the code above, we made the
-		// memory writeable no matter what the flags. Also,
+		// memory writable no matter what the flags. Also,
 		// note that the cookie is not allowed to be zero,
 		// otherwise we wouldn't be running this block, so
 		// it should include the flags... re-read the comment
@@ -119,6 +119,10 @@ static void handle_page_fault(const IRQ *irq, void *priv)
 
 		// OK, let's hope that worked...
 		return;
+	}
+	else
+	{
+		syslog.messagef(LogLevel::DEBUG, "not a demand-paging event (cookie API call succeeded? %d)", (int) success);
 	}
 	// If we got here, it means we couldn't get the cookie or it was zero
 	current_thread->owner().terminate(-1);

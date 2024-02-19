@@ -75,7 +75,14 @@ typedef __gnuc_va_list va_list;
 #define STRINGIFY(__N) _STRINGIFY(__N)
 #define _STRINGIFY(__N) #__N
 
+#define __make_arch_identx(pre, fam, post) pre ## fam ## post
+#define __make_arch_identy(pre, fam, post) __make_arch_identx(pre, fam, post)
+#define __make_arch_ident(pre, post)  __make_arch_identy(pre, ARCH_FAMILY_NAME, post)
+
+/* FIXME: these are architecture-dependent... */
+#define ARCH_FAMILY_NAME X86
 #define __page_bits 12
+
 #define __page_size (1 << __page_bits)
 #define __page_offset(__addr) ((__addr) & (__page_size - 1))
 #define __page_base(__addr) ((__addr) & ~(__page_size - 1))
