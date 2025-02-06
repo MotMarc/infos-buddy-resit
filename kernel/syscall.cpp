@@ -22,6 +22,7 @@ using namespace infos::kernel;
 using namespace infos::fs;
 using namespace infos::util;
 
+#include <arch/x86/vma.h>
 
 SyscallManager::SyscallManager()
 {
