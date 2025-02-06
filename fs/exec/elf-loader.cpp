@@ -117,7 +117,7 @@ Process *ElfLoader::load(const String &cmdline)
 					sz = __page_size;
 					offset = ent.offset + (vaddr - ent.vaddr);
 				}
-				if (vaddr == ent.vaddr && nextpage < file_end_vaddr)
+				else if (vaddr == ent.vaddr && nextpage < file_end_vaddr)
 				{
 					offset = ent.offset;
 					// the file data continues, but this time around, we
