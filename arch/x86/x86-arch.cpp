@@ -77,8 +77,8 @@ bool X86Arch::init()
 
 	x86_log.messagef(LogLevel::DEBUG, "GDTR = 0x%lx, IDTR = 0x%lx, TR = 0x%llx, RSP = 0x%llx", gdt.get_ptr(), idt.get_ptr(), (uint64_t) tss.get_sel(), rsp);
 
-	__wrmsr(MSR_STAR, 0x18000800000000ULL);				// CS Bases for User-Mode/Kernel-Mode
-	__wrmsr(MSR_LSTAR, (uint64_t)__syscall_trap);		// RIP for syscall entry
+	__wrmsr(MSR_STAR, 0x18000800000000ULL);       // CS Bases for User-Mode/Kernel-Mode
+	__wrmsr(MSR_LSTAR, (uint64_t)__syscall_trap); // RIP for 'syscall' entry -- we don't use this
 	__wrmsr(MSR_SFMASK, (1 << 9));
 
 //	auto feat = cpuid_get_features();
