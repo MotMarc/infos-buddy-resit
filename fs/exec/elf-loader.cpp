@@ -5,6 +5,9 @@
  * Copyright (C) University of Edinburgh 2016.  All Rights Reserved.
  *
  * Tom Spink <tspink@inf.ed.ac.uk>
+ *
+ * Modifications copyright King's College London 2022--5.
+ * Stephen Kell <stephen.kell@kcl.ac.uk>
  */
 #include <infos/fs/exec/elf-loader.h>
 #include <infos/fs/file.h>
@@ -100,50 +103,113 @@ Process *ElfLoader::load(const String &cmdline)
 		{
 		case ProgramHeaderEntryType::PT_LOAD:
 		{
+			/* Each LOAD header, i.e. segment to be loaded, consists of
+			 * zero or more bytes that must be copied from the file
+			 * (filesz in number) followed by zero or more bytes that are
+			 * initialized to zero (memsz - filesz in number). So memsz
+			 * describes the entire length of the segment, and we know
+			 * that filesz <= memsz. It looks like this.
+			 *
+			 * Note how there is an "file view", numbered as a byte offset
+			 * within the file, and a "virtual address space" view, numbered
+			 * by virtual address.
+			 *
+			 *                   .-- the part that must be copied from the file
+			 * file space        |
+			 *          offset   |    offset + filesz
+			 *             v_________________v.......-- the zero part, not stored in the file
+			 *             |XXXXXXXXXXXXXXXXX00000000|
+			 *             ^                 ^       ^--- vaddr + memsz
+			 *           vaddr         vaddr + filesz
+			 * virtual address space
+			 *
+			 * Finally, note that offset and vaddr do *not* have to
+			 * be aligned to a page boundary. They do, however, have
+			 * to be congruent modulo the page size, i.e. start at the
+			 * same offset within a page. Also note that memsz does not
+			 * have to be a whole number of pages. So the following code
+			 * handles the various cases of how the segment boundaries
+			 * may line up with the page boundaries.
+			 */
 			uintptr_t file_end_vaddr = ent.vaddr + ent.filesz;
-			uintptr_t nextpage = __align_down_page(ent.vaddr + __page_size);
+			uintptr_t nextpage_vaddr = __align_down_page(ent.vaddr + __page_size);
 			// for each page that any part of this segment overlaps...
-			for (uintptr_t vaddr = ent.vaddr; vaddr < ent.vaddr + ent.memsz;
-				vaddr = nextpage, nextpage += __page_size)
+			for (uintptr_t current_vaddr = ent.vaddr;
+			        current_vaddr < ent.vaddr + ent.memsz;
+			        current_vaddr = nextpage_vaddr, nextpage_vaddr += __page_size)
 			{
+				// we always allocate a page backed by real memory, but we may
+				// have done it last time around the loop, so test is_mapped()
+				if (!np->vma().is_mapped(current_vaddr))
+				{
+					/* Use -1 to mean "default permissions" */
+					np->vma().allocate_virt(current_vaddr, /* one page */ 1, -1);
+				}
+				// figure out the size and file offset of our copy (if needed)
 				size_t sz;
 				unsigned long offset;
-				// we have to allocate a page backed by real memory
-				if (!np->vma().is_mapped(vaddr)) np->vma().allocate_virt(vaddr, 1, -1);
-				if (vaddr % __page_size == 0
-					&& nextpage <= file_end_vaddr)
+				if (current_vaddr % __page_size == 0
+					&& nextpage_vaddr <= file_end_vaddr)
 				{
-					/* Easy case: here we need a whole page of data from the file */
+					/* Easy case: here we need a whole page of data from the file.
+					  . . . v . . . v . . . v . . . v . . . v
+					   - - -:XXXXXXX:
+					  ' ' ' ^ ' ' ' ^ ' ' ' ^ ' ' ' ^ ' ' ' ^
+					*/
 					sz = __page_size;
-					offset = ent.offset + (vaddr - ent.vaddr);
+					offset = ent.offset + (current_vaddr - ent.vaddr);
 				}
-				else if (vaddr == ent.vaddr && nextpage < file_end_vaddr)
+				else if (current_vaddr == ent.vaddr && nextpage_vaddr <= file_end_vaddr)
 				{
 					offset = ent.offset;
-					// the file data continues, but this time around, we
-					// copy just the part in this page
+					/* This case is only hit the first time around the loop, and
+					 * then only if ent.vaddr is not page-aligned. We know that
+					 * current_vaddr is itself not page-aligned, therefore.
+					 * Also, since we have nextpage_vaddr <= file_end_vaddr, it
+					 * means the file data fills this page and may continue into a next page.
+					 * This time around the loop, just copy just the part
+					 * in this page. */
 					sz = __align_up_page(ent.vaddr) - ent.vaddr;
+					/*        .current_vaddr
+					  . . .v .|. . v . . . v . . . v . . . v . . .
+					          |XXXX:- -
+					       ^ ' ' ' ^ ' ' ' ^ ' ' ' ^ ' ' ' ^ ' ' '
+					*/
 				}
-				else if (vaddr >= file_end_vaddr)
+				else if (current_vaddr >= file_end_vaddr)
 				{
 					// we're after the end of file data... this part needs to be
-					// zero-initialized (allocate_phys does this)
+					// zero-initialized, but allocate_virt gives us zero-initialized
+					// pages, so there is no copying to do!
+
+					/*       .--zeroes may or may not start or end at page boundary
+					  . . .v . . . v . . . v . . . v . . . v . . .
+					         :0000:
+					  ' ' '^ ' ' ' ^ ' ' ' ^ ' ' ' ^ ' ' ' ^ ' ' '
+					 */
 					continue;
 				}
 				else
 				{
 					// last page with file data, not a whole page
-					assert(vaddr < file_end_vaddr);
-					assert(nextpage > file_end_vaddr);
-					sz = file_end_vaddr - vaddr;
-					offset = ent.offset + (vaddr - ent.vaddr);
+					/*     .current_vaddr
+					  . . .v . . . v . . . v . . . v . . . v . . .
+					       |XXXX|
+					  ' ' '^ ' ' ' ^ ' ' ' ^ ' ' ' ^ ' ' ' ^ ' ' '
+					*/
+					assert(current_vaddr < file_end_vaddr);
+					assert(nextpage_vaddr > file_end_vaddr);
+					sz = file_end_vaddr - current_vaddr;
+					offset = ent.offset + (current_vaddr - ent.vaddr);
 				}
+				/* Now we know the size and offset of the file data for this page,
+				 * we can copy the data in. */
 				char *buffer = new char[sz];
 				_file.pread(buffer, sz, offset);
-				np->vma().copy_to(vaddr, buffer, sz);
+				np->vma().copy_to(current_vaddr, buffer, sz);
 				delete buffer;
 			}
-		}
+		} // end case PT_LOAD
 		break;
 
 		case ProgramHeaderEntryType::PT_INTERP:
