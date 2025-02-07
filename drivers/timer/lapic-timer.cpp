@@ -200,11 +200,10 @@ bool LAPICTimer::expired() const
 	return false;
 }
 
-static uint64_t last_tsc = 0;
 
 /**
  * The IRQ handler for the LAPIC timer.
- * @param nr The IRQ number that occurred.
+ * @param irq The IRQ that occurred.
  * @param priv IRQ specific data.  In this case, a pointer to the LAPIC timer device object.
  */
 void LAPICTimer::lapic_timer_irq_handler(const IRQ *irq, void* priv)
@@ -216,6 +215,7 @@ void LAPICTimer::lapic_timer_irq_handler(const IRQ *irq, void* priv)
 	 * routine. */
 	if (busywait_doing_calibration) { busywait_doing_calibration = 0; return; }
 	/*uint32_t tscl, tsch;
+	static uint64_t last_tsc;
 	asm volatile("rdtsc" : "=a"(tscl), "=d"(tsch));
 
 	uint64_t tsc = tscl | (uint64_t)tsch << 32;
