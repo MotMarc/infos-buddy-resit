@@ -37,7 +37,8 @@ export common-flags += -mno-mmx -mno-sse -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse
 
 export cxxflags	:= $(common-flags)
 export asflags	:= $(common-flags)
-export ldflags  := -nostdlib -z nodefaultlib
+# Silence warnings about executable stack... our bootloader don't care
+export ldflags  := -nostdlib -z nodefaultlib -z execstack
 
 export target           := $(out-dir)/infos-kernel
 export toplevel-obj	:= $(top-dir)/infos-kernel.o
