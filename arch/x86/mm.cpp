@@ -320,13 +320,20 @@ void infos::mm::VMA::insert_mapping(virt_addr_t va, phys_addr_t pa, MappingFlags
 	
 	PTTableEntry *pte = &((PTTableEntry *)pa_to_vpa(pde->base_address()))[pt_idx];
 	
-	pte->base_address(pa);
+	pte->base_address(pa); // this is the only place we use 'pa'
 	
 	if (flags & MappingFlags::Present) pte->present(true);
 	if (flags & MappingFlags::Writable) pte->writable(true);
 	if (flags & MappingFlags::User) pte->user(true);
 	
 	mm_log.messagef(LogLevel::DEBUG, "vma: mapping va=%p -> pa=%p", va, pa);
+}
+bool infos::mm::VMA::set_pte_cookie(virt_addr_t va, uint32_t cookie)
+{
+	// FIXME: add implementation (see comments in include/infos/mm/vma.h)
+	// Check that your implementation is well-matched with 'get_pte_cookie'
+	// (elsewhere in this file)
+	return false;
 }
 
 FrameDescriptor *infos::mm::VMA::allocate_phys(int order)
@@ -376,6 +383,19 @@ bool infos::mm::VMA::allocate_virt(virt_addr_t va, int nr_pages, int perm /* = -
 	return true;
 }
 
+bool infos::mm::VMA::create_unused_ptes(virt_addr_t va, int nr_pages)
+{
+	// FIXME: add implementation (see comments in include/infos/mm/vma.h)
+	// HINT: what we want to achieve is almost identical to what
+	// 'insert_mapping' does, except that in our case we have no physical
+	// address to map to -- we're "unused". So a good solution might be
+	// to refactor 'insert_mapping' so it works in two stages:
+	//     - firstly, ensure the page table entry has been created
+	//     - secondly, install in it the mapping to the physical address.
+	// The 'firstly' part is us!
+	return false;
+}
+
 bool infos::mm::VMA::is_mapped(virt_addr_t va)
 {
 	phys_addr_t pa;
@@ -416,8 +436,24 @@ bool infos::mm::VMA::get_mapping(virt_addr_t va, phys_addr_t& pa)
 	pa = pte->base_address() | __page_offset(va);
 	return true;
 }
+bool infos::mm::VMA::get_pte_cookie(virt_addr_t va, uint32_t& cookie)
+{
+	// FIXME: add implementation (see comments in include/infos/mm/vma.h)
+	// A partial implementation is provided here. Ensure that your
+	// final implementation is compatible with 'set_pte_cookie'
+	// (elsewhere in this file).
+        PTTableEntry *pte = /* REPLACE THIS */ nullptr;
+	if (!pte) return false; // failed!
+        assert(!pte->present());
+        // extract bits 12..43 inclusive -- this is where the cookie should be stored
+        uint64_t mask_12_43 = ((1ul<<44) - 1) & ~((1ul<<12) - 1);
+	// what we just made is the following 64-bit number (shown in binary):
+	// 0000000000000000000011111111111111111111111111111111000000000000
+	// NOTE: here 'cookie' is being returned by reference back to the caller
+        cookie = (uint32_t)((pte->bits & mask_12_43) >> 12);
+        return true;
 
-
+}
 bool infos::mm::VMA::copy_to(virt_addr_t dest_va, const void* src, size_t size)
 {
 	phys_addr_t pa;

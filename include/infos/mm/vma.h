@@ -67,6 +67,30 @@ namespace infos
 			bool get_mapping(virt_addr_t va, phys_addr_t& pa);
 			/* Does this virtual address map to anything? */
 			bool is_mapped(virt_addr_t va);
+			/* Like allocate_virt, but don't actually allocate physical memory.
+			 * Just ensure the page tables exist and nothing is mapped there yet. */
+			bool create_unused_ptes(virt_addr_t va, int nr_pages);
+
+			/* The following two calls provide a "cookie API" for inactive
+			 * page table entries. The entry's "present" bit remains clear,
+			 * so the hardware will ignore it, but the other bits can be
+			 * used to store an arbitrary 32-bit value. The page table does
+			 * not know or care what this value means -- the client code that
+			 * is setting and getting the cookie can use it to represent
+			 * whatever it likes. (This is the same sense of "cookie" as in
+			 * a web browser -- a cookie is an opaque piece of data, where
+			 * the data's meaning is known only to one party but the data is
+			 * stored by the other party.) In the week 3 task, you can use
+			 * this to store information about disk blocks.... */
+
+			/* Store an arbitrary ('cookie') value into the PTE for the given
+			 * virtual address. The PTE *must* exist already
+			 * (see create_unused_ptes()) and must be invalid (non-present).
+			 * Return true if and only if success. */
+			bool set_pte_cookie(virt_addr_t va, uint32_t cookie);
+			/* Like get_mapping, but updates cookie to the PTE's stored cookie (iff it
+			 * has one, else returns false). NOTE the use of a reference parameter. */
+			bool get_pte_cookie(virt_addr_t va, uint32_t& cookie);
 			
 			void install_default_kernel_mapping();
 			
