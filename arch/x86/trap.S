@@ -11,26 +11,93 @@
 .code64
 .text
 
-.macro save_context,has_arg
-.if !\has_arg
-	push $0
-.endif
+#define CFI_RETURN_COLUMN 32
+#define DWARF_X86_64_RAX     0
+#define DWARF_X86_64_RDX     1
+#define DWARF_X86_64_RCX     2
+#define DWARF_X86_64_RBX     3
+#define DWARF_X86_64_RSI     4
+#define DWARF_X86_64_RDI     5
+#define DWARF_X86_64_RBP     6
+#define DWARF_X86_64_RSP     7
+#define DWARF_X86_64_R8      8
+#define DWARF_X86_64_R9      9
+#define DWARF_X86_64_R10     10
+#define DWARF_X86_64_R11     11
+#define DWARF_X86_64_R12     12
+#define DWARF_X86_64_R13     13
+#define DWARF_X86_64_R14     14
+#define DWARF_X86_64_R15     15
+#define DWARF_X86_64_RIP     16
 
+.macro save_context,has_arg
+	.cfi_return_column CFI_RETURN_COLUMN
+	.cfi_offset CFI_RETURN_COLUMN, 8   // RIP is stored 8 bytes *above* the CFA
+	.cfi_offset DWARF_X86_64_RSP, 32   // RSP is stored 32 bytes *above* the CFA
+.if !\has_arg
+	.cfi_def_cfa DWARF_X86_64_RSP, -8
+	push $0
+	.cfi_adjust_cfa_offset 8
+.else
+	.cfi_def_cfa DWARF_X86_64_RSP, 0
+.endif
+	// We are the first code running in the interrupt handler. So after
+	// our push above if needed, our stack looks like this.
+	//
+	// SS:RSP (original RSP)           (SS pushed first, padded to quad-word)
+	// RFLAGS
+	// CS (padded to a quadword)
+	// RIP
+	// error code quadword or zero   <-- %rsp
+	//
+	// (recall: x86 stack pointer points at the last value pushed)
+	//
+	// Let's define the canonical frame address as the value of %rsp shown above.
 	push %rax
+	.cfi_adjust_cfa_offset 8
+	.cfi_offset DWARF_X86_64_RAX, -8
 	push %rbx
+	.cfi_adjust_cfa_offset 8
+	.cfi_offset DWARF_X86_64_RBX, -16
 	push %rcx
+	.cfi_adjust_cfa_offset 8
+	.cfi_offset DWARF_X86_64_RCX, -24
 	push %rdx
+	.cfi_adjust_cfa_offset 8
+	.cfi_offset DWARF_X86_64_RDX, -32
 	push %rsi
+	.cfi_adjust_cfa_offset 8
+	.cfi_offset DWARF_X86_64_RSI, -40
 	push %rdi
+	.cfi_adjust_cfa_offset 8
+	.cfi_offset DWARF_X86_64_RDI, -48
 	push %rbp
+	.cfi_adjust_cfa_offset 8
+	.cfi_offset DWARF_X86_64_RBP, -56
 	push %r8
+	.cfi_adjust_cfa_offset 8
+	.cfi_offset DWARF_X86_64_R8, -64
 	push %r9
+	.cfi_adjust_cfa_offset 8
+	.cfi_offset DWARF_X86_64_R9, -72
 	push %r10
+	.cfi_adjust_cfa_offset 8
+	.cfi_offset DWARF_X86_64_R10, -80
 	push %r11
+	.cfi_adjust_cfa_offset 8
+	.cfi_offset DWARF_X86_64_R11, -88
 	push %r12
+	.cfi_adjust_cfa_offset 8
+	.cfi_offset DWARF_X86_64_R12, -96
 	push %r13
+	.cfi_adjust_cfa_offset 8
+	.cfi_offset DWARF_X86_64_R13, -104
 	push %r14
+	.cfi_adjust_cfa_offset 8
+	.cfi_offset DWARF_X86_64_R14, -112
 	push %r15
+	.cfi_adjust_cfa_offset 8
+	.cfi_offset DWARF_X86_64_R15, -120
 
 	// Load the pointer to the thread context into RAX
 	call get_current_thread_context
@@ -48,6 +115,7 @@
 	// 0(%rcx) is the pointer to the native context, so push this
 	// onto the stack.
 	push (%rcx)
+	.cfi_adjust_cfa_offset 8
 
 	// Now, store the pointer to the new native context into
 	// the current thread's native context pointer.
@@ -69,32 +137,71 @@
 1:
 	mov (%rcx), %rsp
 	pop (%rcx)
+	.cfi_adjust_cfa_offset -8
 
 	pop %r15
+	.cfi_adjust_cfa_offset -8
+	.cfi_same_value DWARF_X86_64_R15
 	pop %r14
+	.cfi_adjust_cfa_offset -8
+	.cfi_same_value DWARF_X86_64_R14
 	pop %r13
+	.cfi_adjust_cfa_offset -8
+	.cfi_same_value DWARF_X86_64_R13
 	pop %r12
+	.cfi_adjust_cfa_offset -8
+	.cfi_same_value DWARF_X86_64_R12
 	pop %r11
+	.cfi_adjust_cfa_offset -8
+	.cfi_same_value DWARF_X86_64_R11
 	pop %r10
+	.cfi_adjust_cfa_offset -8
+	.cfi_same_value DWARF_X86_64_R10
 	pop %r9
+	.cfi_adjust_cfa_offset -8
+	.cfi_same_value DWARF_X86_64_R9
 	pop %r8
+	.cfi_adjust_cfa_offset -8
+	.cfi_same_value DWARF_X86_64_R8
 	pop %rbp
+	.cfi_adjust_cfa_offset -8
+	.cfi_same_value DWARF_X86_64_RBP
 	pop %rdi
+	.cfi_adjust_cfa_offset -8
+	.cfi_same_value DWARF_X86_64_RDI
 	pop %rsi
+	.cfi_adjust_cfa_offset -8
+	.cfi_same_value DWARF_X86_64_RSI
 	pop %rdx
+	.cfi_adjust_cfa_offset -8
+	.cfi_same_value DWARF_X86_64_RDX
 	pop %rcx
+	.cfi_adjust_cfa_offset -8
+	.cfi_same_value DWARF_X86_64_RCX
 	pop %rbx
+	.cfi_adjust_cfa_offset -8
+	.cfi_same_value DWARF_X86_64_RBX
 	pop %rax
-	add $8, %rsp
+	.cfi_adjust_cfa_offset -8
+	.cfi_same_value DWARF_X86_64_RAX
+	add $8, %rsp   // i.e. discard the argument or the zero we pushed earlier
+	.cfi_adjust_cfa_offset -8
+
 
 .endm
 
+// FIXME: We should not call this stuff 'irq' because it's really 'interrupt'.
+// The 8259A PIC's "IRQs" live at a configurable offset within this space.
 .macro defirq,nr,has_arg
 .align 16
 .global __irq\nr
 __irq\nr:
-
+	.cfi_startproc simple
+	.cfi_signal_frame     // disables gdb's "previous frame inner to this frame" sanity check
 	// Save the current context
+	// Some IRQs come with an argument pre-pushed on the stack.
+	// If \has_arg is false, we will push a literal zero to ensure a
+	// uniform frame layout.
 	save_context \has_arg
 
 	// The first argument is the interrupt number.
@@ -103,15 +210,26 @@ __irq\nr:
 	// Call the interrupt handler
 	call __handle_raw_irq
 
-	// Restore the current context -- this does not put the
-	// interrupt argument back on the stack, as it is not
-	// architecturally required.
+	// Restore the current context -- this unconditionally drops
+	// the argument or dummy zero we pushed, as leaving the argument
+	// in place is not architecturally required.
 	restore_context
 
 	// Return from interrupt.
 	iretq
+	.cfi_endproc
 .endm
 
+// Which interrupts push an argument? "faults", including 8, 10, 11, 12, 13, 14, 17 and 30.
+// 8:  double fault
+// 10: invalid TSS
+// 11: segment not present
+// 12: stack-segment fault
+// 13: general protection fault
+// 14: page fault
+// 17: alignment check
+// 30: (reserved?)
+// Useful reference: https://wiki.osdev.org/Interrupt_Vector_Table
 defirq 0,0
 defirq 1,0
 defirq 2,0
