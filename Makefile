@@ -24,6 +24,7 @@ export objcopy  := objcopy
 
 export BUILD-TARGET = $(patsubst $(top-dir)/%,%,$@)
 
+
 # We no longer have a Makefile.include by default, but a build dir may still
 # define one if it wants to override any of the variables defined above here.
 # The definitions from 'builtin-name' to here were originally in that file.
